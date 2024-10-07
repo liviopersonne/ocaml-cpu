@@ -4,15 +4,15 @@ open Logique
 let bit_registre doit_ecrire valeur_ecrite =
   let _ = (doit_ecrire,valeur_ecrite) in
   let valeur_stockee = nouvelle_tension() in
-  let nouvelle_valeur = delai (mux doit_ecrire valeur_ecrite valeur_stockee) in
-  relie valeur_stockee nouvelle_valeur;
+  let nouvelle_valeur = mux doit_ecrire valeur_ecrite valeur_stockee in
+  relie valeur_stockee (delai nouvelle_valeur);
   valeur_stockee
   
 let word_registre doit_ecrire valeur_ecrite  =
   let _ = (doit_ecrire,valeur_ecrite) in
   let valeur_stockee = Array.init 16 (fun i -> nouvelle_tension()) in
-  let nouvelle_valeur = delai (selecteur doit_ecrire valeur_ecrite valeur_stockee) in
-  relie valeur_stockee nouvelle_valeur;
+  let nouvelle_valeur = selecteur doit_ecrire valeur_ecrite valeur_stockee in
+  relie valeur_stockee (delai nouvelle_valeur);
   valeur_stockee
  
 (* 
@@ -26,7 +26,16 @@ let word_registre doit_ecrire valeur_ecrite  =
 *)
 let rec memoire (taille_addr: int) (set: tension) (l1: tension list) (l2: tension list)
   (e: tension list) (v: tension array): tension array * tension array =
-  let _ = if false then let _ = memoire taille_addr set l1 l2 e v in () ; () in failwith "Memoire not implemented!"
+  let _ = if false then let _ = memoire taille_addr set l1 l2 e v in () ; () in
+  if taille_addr = 0 then ([], []) else
+    let v_lue_1 = Array.of_list l1 in
+    let v_lue_2 = Array.of_list l2 in
+    let v_lue_tot = Array.append (v_lue_1) (v_lue_2) in
+    let v_stockee = Array.init 16 (fun i -> nouvelle_tension()) in
+    let nouvelle_valeur = delai (selecteur doit_ecrire v_lue_tot v_stockee) in
+    
+
+  failwith "Memoire not implemented!"
 
 let rom l1 l2 valeurs =          
   let _ = (l1,l2,valeurs) in failwith "ROM not implemented!"
