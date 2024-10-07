@@ -16,7 +16,7 @@ let somme a b =
   let _ = a,b in let n = Array.length a in
   let rep = Array.make n zero in
   let carry = ref zero in
-  for i = (n-1) downto 0 do
+  for i = 0 to (n-1) do
     let h,l = full_adder a.(i) b.(i) !carry in
     rep.(i) <- l;
     carry := h 
@@ -26,7 +26,7 @@ let somme a b =
 let increment a =
   let _ = a in
   let n = Array.length a in
-  let one = Array.init n (fun i -> if i = (n-1) then un else zero) in
+  let one = Array.init n (fun i -> if i = 0 then un else zero) in
   somme a one
 
 let decrement a =

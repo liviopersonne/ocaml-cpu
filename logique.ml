@@ -4,7 +4,7 @@ let neg a = nand a a
 let ou a b = let _ = a,b in nand (neg a) (neg b)
 let et a b = let _ = a,b in neg (nand a b)
 let xor a b = let _ = a,b in let n = nand a b in nand (nand a n) (nand b n)
-let mux flag a b = let _ = a,b,flag in if (flag = zero) then a else b
+let mux flag a b = let _ = a,b,flag in ou (et (neg flag) a) (et flag b)
 (* mux renvoie une tension qui vaut celle de a quand flag=0 et celle de b sinon *)
 
 
