@@ -5,15 +5,13 @@ let vers_bus b =
   Array.init nb_bits (fun i -> if i=0 then b else zero)
 
 (* Renvoie le couple (h,l) avec hl = a+b *)
-let half_adder a b =
-  let _ = a,b in (et a b, xor a b)
+let half_adder a b = (et a b, xor a b)
   
 (* Renvoie le couple (h,l) avec hl = a+b+c *)
-let full_adder a b c =
-  let _ = a,b,c in let x = xor a b in (ou (et x c) (et a b), xor x c)
+let full_adder a b c = let x = xor a b in (ou (et x c) (et a b), xor x c)
 
 let somme a b =
-  let _ = a,b in let n = Array.length a in
+  let n = Array.length a in
   let rep = Array.make n zero in
   let carry = ref zero in
   for i = 0 to (n-1) do
@@ -24,30 +22,24 @@ let somme a b =
   rep
 
 let increment a =
-  let _ = a in
   let n = Array.length a in
   let one = Array.init n (fun i -> if i = 0 then un else zero) in
   somme a one
 
 let decrement a =
-  let _ = a in
   let n = Array.length a in
   let neg_one = Array.make n un in
   somme a neg_one
 
 let difference a b =
-  let _ = a,b in
   let compl_b = increment (inverse b) in
   somme a compl_b
 
-let est_nul a =
-  let _ = a in Array.fold_left (fun curr x -> curr && x = zero) (true) a
+let est_nul a = Array.fold_left (fun curr x -> et curr (neg x)) (neg a.(0)) a
 
-let est_negatif a =
-  let _ = a in a.(0) = un
+let est_negatif a = a.(nb_bits-1)
 
-let est_positif a =
-  let _ = a in a.(0) = zero
+let est_positif a: tension = neg (est_negatif a)
 
   
 let rec bit_liste_vers_nb = (* Suppose le petit-boutisme*)

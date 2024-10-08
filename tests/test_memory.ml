@@ -65,34 +65,6 @@ let _test_word_registre =
     ) tests
            
 
-  
-let _test_rom =
-  let l1 = List.init nb_bits (fun _ -> nouvelle_tension ()) in
-  let l2 = List.init nb_bits (fun _ -> nouvelle_tension ()) in
-  let t = 1024 in
-  let contenu = Array.init t
-                           (fun i -> (i*i) mod 65536 |>
-                                       nb_vers_bits |>
-                                       List.map (function | 0 -> zero | _ -> un) |>
-                                       Array.of_list) in
-  let out1,out2 = rom l1 l2 contenu in
-  let out = Array.concat [out1;out2] in
-  let test =
-    let s = compile (List.map Array.of_list [l1;l2] |> Array.concat) out in
-    fun a1 a2 ->
-    assert(
-        s (Array.concat [nb_vers_bits a1 |> Array.of_list; nb_vers_bits a2 |> Array.of_list])
-        =
-          Array.concat [nb_vers_bits (a1*a1 mod 65536) |> Array.of_list;
-                        nb_vers_bits (a2*a2 mod 65536) |> Array.of_list]
-      )
-  in
-  test 10 100 ;
-  test 0 1 ;
-  test 1 0 ;
-  test 100 (t-1) ;
-  test (t-1) 0
-
 let _test_memoire_avec_une_lecture_n_bits =
   let rec powm x p m = (* compute x^p mod m *)
     if p = 0
@@ -134,6 +106,34 @@ let _test_memoire_avec_une_lecture_n_bits =
       ) tests
   done
 
+  
+  
+let _test_rom =
+  let l1 = List.init nb_bits (fun _ -> nouvelle_tension ()) in
+  let l2 = List.init nb_bits (fun _ -> nouvelle_tension ()) in
+  let t = 1024 in
+  let contenu = Array.init t
+                           (fun i -> (i*i) mod 65536 |>
+                                       nb_vers_bits |>
+                                       List.map (function | 0 -> zero | _ -> un) |>
+                                       Array.of_list) in
+  let out1,out2 = rom l1 l2 contenu in
+  let out = Array.concat [out1;out2] in
+  let test =
+    let s = compile (List.map Array.of_list [l1;l2] |> Array.concat) out in
+    fun a1 a2 ->
+    assert(
+        s (Array.concat [nb_vers_bits a1 |> Array.of_list; nb_vers_bits a2 |> Array.of_list])
+        =
+          Array.concat [nb_vers_bits (a1*a1 mod 65536) |> Array.of_list;
+                        nb_vers_bits (a2*a2 mod 65536) |> Array.of_list]
+      )
+  in
+  test 10 100 ;
+  test 0 1 ;
+  test 1 0 ;
+  test 100 (t-1) ;
+  test (t-1) 0
   
 let _ =
   print_string "Tous les tests mémoires sont passés !\n"
