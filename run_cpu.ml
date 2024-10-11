@@ -1,6 +1,6 @@
-(* open Cpu *)
-(* open Circuit *)
-(* open Arithmetique *)
+open Cpu
+open Circuit
+open Arithmetique
 
    
 let ins_add x y dst =  8+16*(dst+16*(x+16*y))

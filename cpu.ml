@@ -1,8 +1,8 @@
-(* open Logique
+open Logique
 open Circuit
 open Arithmetique
 open Memory
-open Alu *)
+open Alu
 
    
 let cpu program =
