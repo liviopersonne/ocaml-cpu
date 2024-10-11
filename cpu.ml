@@ -14,9 +14,9 @@ let print_array (a) =
 
 let register_init (taille: int): tension * tension array * tension array =
   let set = nouvelle_tension() in
-  let value = Array.init taille (fun _ -> nouvelle_tension ()) in
-  let register = word_registre set value in
-  (set, value, register)
+  let input = Array.init taille (fun _ -> nouvelle_tension ()) in
+  let register = word_registre set input in
+  (set, input, register)
 
 
 (* 
@@ -31,11 +31,11 @@ let register_init (taille: int): tension * tension array * tension array =
 *)
 let cpu (program: tension array array): tension array * tension array * tension array * tension array =
   assert(Array.length program <= 256);
-  let pc_set, pc_value, pc = register_init(8) in
-  let opcode_set, opcode_value, opcode_out = register_init(4) in
-  let r1_set, r1_value, r1_out = register_init(4) in
-  let r2_set, r2_value, r2_out = register_init(4) in
-  let r3_set, r3_value, r3_out = register_init(4) in
+  let pc_set, pc_input, pc = register_init(8) in
+  let opcode_set, opcode_input, opcode_out = register_init(4) in
+  let r1_set, r1_input, r1_out = register_init(4) in
+  let r2_set, r2_input, r2_out = register_init(4) in
+  let r3_set, r3_input, r3_out = register_init(4) in
 
   let mem_set = nouvelle_tension() in
   let mem_l1, mem_l2 = List.init 8 (fun _ -> nouvelle_tension()), List.init 8 (fun _ -> nouvelle_tension()) in
@@ -46,14 +46,49 @@ let cpu (program: tension array array): tension array * tension array * tension 
   let alu_x, alu_y = Array.init 16 (fun _ -> nouvelle_tension()), Array.init 16 (fun _ -> nouvelle_tension()) in
   let alu_out = alu alu_instruction alu_x alu_y in
 
-
-
-  let run_instruction () =
-    let input = Array.init 16 (fun _ -> nouvelle_tension()) in
-    let opcode = Array.sub input 0 4 in
-    let r1 = Array.sub input 4 4 in
-    let r2 = Array.sub input 8 4 in
-    let r3 = Array.sub input 12 4 in
+  let a = selecteur opcode_out.(3) (
+    (* Instruction Registres *)
+    selecteur opcode_out.(2) (
+      selecteur opcode_out.(1) (
+        selecteur opcode_out.(0) (
+          (* Opcode = 0 *)
+          [||]
+        ) (
+          (* Opcode = 1 *)
+          [||]
+        )
+      ) (
+        selecteur opcode_out.(0) (
+          (* Opcode = 2 *)
+          [||]
+        ) (
+          (* Opcode = 3 *)
+          [||]
+        )
+      )
+    ) (
+      selecteur opcode_out.(1) (
+        selecteur opcode_out.(0) (
+          (* Opcode = 4 *)
+          [||]
+        ) (
+          (* Opcode = 5 *)
+          [||]
+        )
+      ) (
+        selecteur opcode_out.(0) (
+          (* Opcode = 6 *)
+          [||]
+        ) (
+          (* Opcode = 7 *)
+          [||]
+        )
+      )
+    )
+  ) (
+    (* Instruction ALU *)
+    [||]
+  ) in
 
 
 
