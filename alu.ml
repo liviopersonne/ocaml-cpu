@@ -1,7 +1,9 @@
+open Circuit
 open Logique
 open Arithmetique
 
-let alu (instruction: Circuit.tension array) (x: Circuit.tension array) (y: Circuit.tension array): Circuit.tension array = (* instruction sur 3 bits et x y de 16 bits chacun *)
+(* instruction sur 3 bits et x y de 16 bits chacun *)
+let alu (instruction: tension array) (x: tension array) (y: tension array): tension array =
   selecteur (instruction.(2)) (
     selecteur (instruction.(1)) (
       selecteur (instruction.(0)) (

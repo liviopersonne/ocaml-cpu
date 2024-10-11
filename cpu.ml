@@ -1,14 +1,22 @@
-(* open Logique *)
+open Logique
 open Circuit
 open Arithmetique
 open Memory
-(* open Alu *)
+open Alu
+
+let _ = vers_bus (bit_registre (nouvelle_tension()) (nouvelle_tension()))
 
 
 let print_array (a) =
   print_string "[|";
   Array.iter (Printf.printf "%d, ") a;
   print_string "\b\b|]\n"
+
+let register_init (taille: int): tension * tension array * tension array =
+  let set = nouvelle_tension() in
+  let value = Array.init taille (fun _ -> nouvelle_tension ()) in
+  let register = word_registre set value in
+  (set, value, register)
 
 
 (* 
@@ -22,18 +30,31 @@ let print_array (a) =
     r3: Registre n°3 (lu)
 *)
 let cpu (program: tension array array): tension array * tension array * tension array * tension array =
-  let _ = program in
-  let set_pc = nouvelle_tension() in
-  let zero_word = Array.init (nb_bits) (fun _ -> nouvelle_tension ()) in
-  let pc = word_registre set_pc zero_word in
-  
-  let zero_array = nb_to_array 0 in
-  let rep = compile zero_word pc zero_array in
+  assert(Array.length program <= 256);
+  let pc_set, pc_value, pc = register_init(8) in
+
+  let mem_set = nouvelle_tension() in
+  let mem_l1, mem_l2 = List.init 8 (fun _ -> nouvelle_tension()), List.init 8 (fun _ -> nouvelle_tension()) in
+  let mem_e, mem_v = List.init 8 (fun _ -> nouvelle_tension()), Array.init 8 (fun _ -> nouvelle_tension()) in
+  let mem1, mem2 = ram_rom mem_set mem_l1 mem_l2 mem_e mem_v program in
+
+  let alu_instruction = Array.init 3 (fun _ -> nouvelle_tension()) in
+  let alu_x, alu_y = Array.init 16 (fun _ -> nouvelle_tension()), Array.init 16 (fun _ -> nouvelle_tension()) in
+  let alu_out = alu alu_instruction alu_x alu_y in
+
+  let input = Array.init 16 (fun _ -> nouvelle_tension()) in
+  let opcode = Array.sub input 0 4 in
+  let r1 = Array.sub input 4 4 in
+  let r2 = Array.sub input 8 4 in
+  let r3 = Array.sub input 12 4 in
+
+
+
+  let entree = [|0;0;0;0;0;0;0;0|] in
+  let rep = compile pc_value pc entree in
   print_array rep;
   ([||], [||], [||], [||])
 
 
-
-let _ = cpu ([||])
-  
+let _ = cpu [||]
       
