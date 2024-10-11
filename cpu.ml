@@ -32,6 +32,10 @@ let register_init (taille: int): tension * tension array * tension array =
 let cpu (program: tension array array): tension array * tension array * tension array * tension array =
   assert(Array.length program <= 256);
   let pc_set, pc_value, pc = register_init(8) in
+  let opcode_set, opcode_value, opcode_out = register_init(4) in
+  let r1_set, r1_value, r1_out = register_init(4) in
+  let r2_set, r2_value, r2_out = register_init(4) in
+  let r3_set, r3_value, r3_out = register_init(4) in
 
   let mem_set = nouvelle_tension() in
   let mem_l1, mem_l2 = List.init 8 (fun _ -> nouvelle_tension()), List.init 8 (fun _ -> nouvelle_tension()) in
@@ -42,11 +46,14 @@ let cpu (program: tension array array): tension array * tension array * tension 
   let alu_x, alu_y = Array.init 16 (fun _ -> nouvelle_tension()), Array.init 16 (fun _ -> nouvelle_tension()) in
   let alu_out = alu alu_instruction alu_x alu_y in
 
-  let input = Array.init 16 (fun _ -> nouvelle_tension()) in
-  let opcode = Array.sub input 0 4 in
-  let r1 = Array.sub input 4 4 in
-  let r2 = Array.sub input 8 4 in
-  let r3 = Array.sub input 12 4 in
+
+
+  let run_instruction () =
+    let input = Array.init 16 (fun _ -> nouvelle_tension()) in
+    let opcode = Array.sub input 0 4 in
+    let r1 = Array.sub input 4 4 in
+    let r2 = Array.sub input 8 4 in
+    let r3 = Array.sub input 12 4 in
 
 
 
