@@ -4,19 +4,10 @@ open Arithmetique
 open Memory
 open Alu
 
-let _ = vers_bus (bit_registre (nouvelle_tension()) (nouvelle_tension()))
-
-
 let print_array (a) =
   print_string "[|";
   Array.iter (Printf.printf "%d, ") a;
   print_string "\b\b|]\n"
-
-let register_init (taille: int): tension * tension array * tension array =
-  let set = nouvelle_tension() in
-  let input = Array.init taille (fun _ -> nouvelle_tension ()) in
-  let register = word_registre set input in
-  (set, input, register)
 
 let relie_liste (l1: tension list) (l2: tension list) = List.iter2 (fun x y -> relie x y) l1 l2
 let relie_array (l1: tension array) (l2: tension array): unit = Array.iter2 (fun x y -> relie x y) l1 l2
@@ -208,15 +199,17 @@ let cpu (program: tension array array): tension array * tension array * tension 
   let mem1, mem2 = ram_rom mem_set mem_l1 mem_l2 mem_e mem_v program in
   relie_array mem1 mem1_init;
 
-
-
-
+  (* Unused variables *)
   let _ = r1_list, mem2 in
+
+
+  (* TODO: Initialize pc to 0 *)
+  (* TODO: Excute code *)
 
   let entree = [|0;0;0;0;0;0;0;0|] in
   let rep = compile pc_value pc entree in
   print_array rep;
-  ([||], [||], [||], [||])
+  (pc, opcode, adress_to_register r2_list regs, adress_to_register r3_list regs)
 
 
 let _ = cpu [||]
