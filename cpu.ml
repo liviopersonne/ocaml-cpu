@@ -25,9 +25,9 @@ let rec relie_liste (l1: tension list) (l2: tension list) =
 
 
 (* La mémoire doit être modifiée que si opcode = 3 *)
-let memory_set opcode: tension = match opcode with
-  | [|a;b;c;d|] -> et (et (a) (b)) (et (neg c) (neg d))  (* Teste si opcode = 3 *)
-  | _ -> failwith "Unmatchable case"
+let memory_set opcode: tension = 
+  let trois = [|un; un; zero; zero|] in
+  est_nul (difference trois opcode)
 
 let alu_instruction opcode: tension array = match opcode with
   | [|a;b;c;_|] -> [|a;b;c|]
@@ -51,8 +51,20 @@ let memory_write_adress (r1: tension array) (r2: tension list) (regs: tension ar
 let memory_write_value (r3: tension list) (regs: tension array array): tension array =
   adress_to_register r3 regs
 
-let register_set (i: int) (opcode: tension array) (r1: tension list) (r2: tension list) (r3: tension list): tension = 
-  nouvelle_tension()
+(* Un registre est modifié ssi opcode >= 4 et i = R1 *)
+let register_set (i: int) (opcode: tension array) (r1: tension array): tension = 
+  let quatre = [|zero; zero; un; zero|] in
+  let correspond (n: int) (t: tension): tension =
+    if n = 0 then neg t else t in
+  mux (est_positif(difference opcode quatre)) (
+    (* opcode >= 4 *)
+    match nb_to_array i with
+    | [|a;b;c;d|] -> et (et (correspond a r1.(0)) (correspond b r1.(1))) (et (correspond c r1.(2)) (correspond d r1.(3)))
+    | _ -> failwith "Unmatchable case"
+  ) (
+    (* opcode < 4 *)
+    zero
+  )
 
 let register_value (i: int) (opcode: tension array) (r1: tension list) (t2: tension list) (r3: tension list): tension array =
   [||]
@@ -94,7 +106,7 @@ let cpu (program: tension array array): tension array * tension array * tension 
   let pc_set = pc_set opcode r1_list r2_list r3_list in
   let pc_value = pc_value opcode r1_list r2_list r3_list in
   let pc = word_registre pc_set pc_value in
-  let regs_set = Array.init 16 (fun i -> register_set i opcode r1_list r2_list r3_list) in
+  let regs_set = Array.init 16 (fun i -> register_set i opcode r1_array) in
   let regs_value = Array.init 16 (fun i -> register_value i opcode r1_list r2_list r3_list) in
   let regs = Array.init 16 (fun i -> word_registre regs_set.(i) regs_value.(i)) in
 
