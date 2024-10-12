@@ -69,8 +69,11 @@ let register_set (i: int) (opcode: tension array) (r1: tension array): tension =
 let register_value (i: int) (opcode: tension array) (r1: tension list) (t2: tension list) (r3: tension list): tension array =
   [||]
 
+(* Le registre pc est modifié ssi opcode <= 2 *)
 let pc_set (opcode: tension array) (r1: tension list) (r2: tension list) (r3: tension list): tension = 
-  nouvelle_tension()
+  let deux = [|zero; un; zero; zero|] in
+  est_positif (difference deux opcode)
+  (* TODO ajouter l'incrémentation de pc *)
 
 let pc_value (opcode: tension array) (r1: tension list) (r2: tension list) (r3: tension list): tension array =
   [||]
