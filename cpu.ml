@@ -51,6 +51,21 @@ let memory_write_adress (r1: tension array) (r2: tension list) (regs: tension ar
 let memory_write_value (r3: tension list) (regs: tension array array): tension array =
   adress_to_register r3 regs
 
+let register_set (i: int) (opcode: tension array) (r1: tension list) (r2: tension list) (r3: tension list): tension = 
+  nouvelle_tension()
+
+let register_value (i: int) (opcode: tension array) (r1: tension list) (t2: tension list) (r3: tension list): tension array =
+  [||]
+
+let pc_set (opcode: tension array) (r1: tension list) (r2: tension list) (r3: tension list): tension = 
+  nouvelle_tension()
+
+let pc_value (opcode: tension array) (r1: tension list) (r2: tension list) (r3: tension list): tension array =
+  [||]
+
+
+
+
 
 (* 
   On arrive enfin au cpu entier !
@@ -64,8 +79,6 @@ let memory_write_value (r3: tension list) (regs: tension array array): tension a
 *)
 let cpu (program: tension array array): tension array * tension array * tension array * tension array =
   assert(Array.length program <= 256);  (* Check that the program fits in the rom *)
-  let zero_list = List.init 8 (fun _ -> zero) in
-  let zero_array = Array.init 8 (fun _ -> zero) in
   
   (* Inputs *)
   let input = Array.init 16 (fun _ -> nouvelle_tension()) in
@@ -78,9 +91,11 @@ let cpu (program: tension array array): tension array * tension array * tension 
   let r3_list = Array.to_list (r3_array) in
   
   (* Registers *)
-  let pc_set, pc_input, pc_out = register_init(8) in
-  let regs_set = Array.init 16 (fun _ -> nouvelle_tension()) in
-  let regs_value = Array.init 16 (fun _ -> Array.init 8 (fun _ -> nouvelle_tension())) in
+  let pc_set = pc_set opcode r1_list r2_list r3_list in
+  let pc_value = pc_value opcode r1_list r2_list r3_list in
+  let pc = word_registre pc_set pc_value in
+  let regs_set = Array.init 16 (fun i -> register_set i opcode r1_list r2_list r3_list) in
+  let regs_value = Array.init 16 (fun i -> register_value i opcode r1_list r2_list r3_list) in
   let regs = Array.init 16 (fun i -> word_registre regs_set.(i) regs_value.(i)) in
 
 
@@ -103,7 +118,7 @@ let cpu (program: tension array array): tension array * tension array * tension 
 
 
   let entree = [|0;0;0;0;0;0;0;0|] in
-  let rep = compile pc_input pc_out entree in
+  let rep = compile pc_value pc entree in
   print_array rep;
   ([||], [||], [||], [||])
 
