@@ -18,10 +18,8 @@ let register_init (taille: int): tension * tension array * tension array =
   let register = word_registre set input in
   (set, input, register)
 
-let rec relie_liste (l1: tension list) (l2: tension list) =
-  match (l1, l2) with
-  | h1::q1, h2::q2 -> relie h1 h2; relie_liste q1 q2
-  | _ -> failwith "Listes de longueusr différentes"
+let rec relie_liste (l1: tension list) (l2: tension list) = List.iter2 (fun x y -> relie x y) l1 l2
+let relie_array (l1: tension array) (l2: tension array): unit = Array.iter2 (fun x y -> relie x y) l1 l2
 
 
 (* La mémoire doit être modifiée que si opcode = 3 *)
@@ -97,11 +95,11 @@ let register_value (i: int) (pc: tension array) (opcode: tension array) (r1: ten
   | _ -> failwith "Unmatchable case"
 
 (* Le registre pc est modifié ssi opcode <= 2 *)
-let pc_set (opcode: tension array) (r1: tension array) (r2: tension list) (r3: tension list) (regs: tension array array): tension = 
+let pc_set (opcode: tension array) (r1: tension array) (r2: tension list) (regs: tension array array): tension = 
   let deux = [|zero; un; zero; zero|] in
   let r2_value = adress_to_register r2 regs in
   match opcode with
-  | [|a;b;c;d|] -> begin
+  | [|a;b;_;_|] -> begin
     mux (est_positif (difference deux opcode)) (
       (* Opcode opcode > 2 *)
       zero
@@ -135,21 +133,21 @@ let pc_set (opcode: tension array) (r1: tension array) (r2: tension list) (r3: t
   | _ -> failwith "Unmatchable case"
   (* TODO ajouter l'incrémentation de pc *)
 
-let pc_value (opcode: tension array) (r1: tension list) (r2: tension list) (r3: tension list): tension array =
-  let zero_word = [|zero; zero; zero; zero; zero; zero; zero; zero|] in
+let pc_value (pc: tension array) (opcode: tension array) (r1: tension array) (r2: tension array) (r3: tension array) (regs: tension array array): tension array =
   match opcode with
-  | [|a;b;_;_|] -> begin
+  | [|_;b;_;_|] -> begin
     (* On suppose que opcode < 3 *)
     selecteur b (
         (* opcode = 2 *)
-        zero_word
+        somme pc (Array.concat [Array.sub r1 3 2;r3])
     ) (
-      selecteur a (
-        (* opcode = 0 *)
-        zero_word
+      (* opcode = 0 ou 1 *)
+      selecteur r1.(0) (
+        (* r1[0] = 0 *)
+        somme pc (Array.concat [Array.sub r1 3 2;r2;r3])
       ) (
-        (* opcode = 1 *)
-        zero_word
+        (* r1[0] = 1 *)
+        adress_to_register (Array.to_list r3) regs
       )
     )
   end
@@ -183,12 +181,14 @@ let cpu (program: tension array array): tension array * tension array * tension 
   let r3_list = Array.to_list (r3_array) in
   
   (* Registers *)
-  let pc_set = pc_set opcode r1_list r2_list r3_list in
-  let pc_value = pc_value opcode r1_list r2_list r3_list in
-  let pc = word_registre pc_set pc_value in
+  let pc_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
   let regs_set = Array.init 16 (fun i -> register_set i opcode r1_array) in
-  let regs_value = Array.init 16 (fun i -> register_value i pc opcode r1_array r2_array r3_array) in
+  let regs_value = Array.init 16 (fun i -> register_value i pc_init opcode r1_array r2_array r3_array) in
   let regs = Array.init 16 (fun i -> word_registre regs_set.(i) regs_value.(i)) in
+  let pc_set = pc_set opcode r1_array r2_list regs in
+  let pc_value = pc_value pc_init opcode r1_array r2_array r3_array regs in
+  let pc = word_registre pc_set pc_value in
+  relie_array pc pc_init;
 
 
   (* Memory entries *)
