@@ -67,7 +67,38 @@ let register_set (i: int) (opcode: tension array) (r1: tension array): tension =
   )
 
 let register_value (i: int) (opcode: tension array) (r1: tension list) (t2: tension list) (r3: tension list): tension array =
-  [||]
+  match opcode with
+  | [|a;b;c;d|] -> begin
+    selecteur d (
+      (* Opcode < 8: instruction registres *)
+      selecteur c (
+        (* Opcode < 4: instruction pc *)
+        [||]
+      ) (
+        selecteur b (
+          selecteur a (
+            (* Opcode = 4 *)
+            [||]
+          ) (
+            (* Opcode = 5 *)
+            [||]
+          )
+        ) (
+          selecteur a (
+            (* Opcode = 6 *)
+            [||]
+          ) (
+            (* Opcode = 7 *)
+            [||]
+          )
+        )
+      )
+    ) (
+      (* Opcode >= 8: instruction ALU *)
+      [||]
+    )
+  end
+  | _ -> failwith "Unmatchable case"
 
 (* Le registre pc est modifié ssi opcode <= 2 *)
 let pc_set (opcode: tension array) (r1: tension list) (r2: tension list) (r3: tension list): tension = 
