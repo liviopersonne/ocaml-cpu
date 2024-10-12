@@ -4,6 +4,7 @@ open Arithmetique
 open Memory
 open Alu
 
+
 let print_array (a) =
   print_string "[|";
   Array.iter (Printf.printf "%d, ") a;
@@ -46,9 +47,9 @@ let register_set (i: int) (opcode: tension array) (r1: tension array): tension =
     if n = 0 then neg t else t in
   mux (est_positif(difference opcode quatre)) (
     (* opcode >= 4 *)
-    match nb_to_array i with
+    match Array.sub (nb_to_array i) 0 4 with
     | [|a;b;c;d|] -> et (et (correspond a r1.(0)) (correspond b r1.(1))) (et (correspond c r1.(2)) (correspond d r1.(3)))
-    | _ -> failwith "Unmatchable case"
+    | _ -> failwith "Unmatchable case in register_set"
   ) (
     (* opcode < 4 *)
     zero
@@ -82,7 +83,7 @@ let register_value (mem1: tension array) (pc: tension array) (opcode: tension ar
       alu [|a;b;c|] alu_x alu_y
     )
   end
-  | _ -> failwith "Unmatchable case"
+  | _ -> failwith "Unmatchable case in register_value"
 
 (* Le registre pc est modifié ssi opcode <= 2 *)
 let pc_set (opcode: tension array) (r1: tension array) (r2: tension list) (regs: tension array array): tension = 
@@ -120,7 +121,7 @@ let pc_set (opcode: tension array) (r1: tension array) (r2: tension list) (regs:
       )
     )
     end
-  | _ -> failwith "Unmatchable case"
+  | _ -> failwith "Unmatchable case in pc_set"
   (* TODO ajouter l'incrémentation de pc *)
 
 let pc_value (pc: tension array) (opcode: tension array) (r1: tension array) (r2: tension array) (r3: tension array) (regs: tension array array): tension array =
@@ -141,7 +142,7 @@ let pc_value (pc: tension array) (opcode: tension array) (r1: tension array) (r2
       )
     )
   end
-  | _ -> failwith "Unmatchable case"
+  | _ -> failwith "Unmatchable case in pc_value"
 
 
 
@@ -157,7 +158,7 @@ let pc_value (pc: tension array) (opcode: tension array) (r1: tension array) (r2
     r2: Registre n°2 (lu)
     r3: Registre n°3 (lu)
 *)
-let cpu (program: tension array array): tension array * tension array * tension array * tension array =
+let cpu (program: tension array array): int array * int array * int array * int array =
   assert(Array.length program <= 256);  (* Check that the program fits in the rom *)
   
   (* Inputs *)
@@ -206,11 +207,12 @@ let cpu (program: tension array array): tension array * tension array * tension 
   (* TODO: Initialize pc to 0 *)
   (* TODO: Excute code *)
 
-  let entree = [|0;0;0;0;0;0;0;0|] in
-  let rep = compile pc_value pc entree in
-  print_array rep;
-  (pc, opcode, adress_to_register r2_list regs, adress_to_register r3_list regs)
+  let entree = [|0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0|] in
+  let rep = compile input (Array.concat [pc; opcode; adress_to_register r2_list regs; adress_to_register r3_list regs]) entree in
+  let pc = Array.sub rep 0 16 in
+  let opcode = Array.sub rep 16 4 in
+  let r2 = Array.sub rep 20 4 in
+  let r3 = Array.sub rep 24 4 in
+  (pc, opcode, r2, r3)
 
-
-let _ = cpu [||]
       
