@@ -23,6 +23,26 @@ let rec relie_liste (l1: tension list) (l2: tension list) =
   | h1::q1, h2::q2 -> relie h1 h2; relie_liste q1 q2
   | _ -> failwith "Listes de longueusr différentes"
 
+
+(* La mémoire doit être modifiée que si opcode = 3 *)
+let mem_set opcode: tension = match opcode with
+  | [|a;b;c;d|] -> et (et (a) (b)) (et (neg c) (neg d))  (* Teste si opcode = 3 *)
+  | _ -> failwith "Unmatchable case"
+
+let alu_instruction opcode: tension array = match opcode with
+  | [|a;b;c;_|] -> [|a;b;c|]
+  | _ -> failwith "Unmatchable case"
+
+let adress_to_register (adress: tension list) (regs: tension array array): tension array = 
+  let rec aux adress (cmpt: int list): tension array = match adress with
+    | [] -> regs.(bit_liste_vers_nb (List.rev cmpt))
+    | h::q -> selecteur h (aux q (0::cmpt)) (aux q (1::cmpt))
+  in aux adress []
+
+let alu_entries (r2: tension list) (r3: tension list) (regs: tension array array): tension array * tension array = 
+  (adress_to_register r2 regs, adress_to_register r3 regs)
+
+
 (* 
   On arrive enfin au cpu entier !
   Arguments:
@@ -53,13 +73,13 @@ let cpu (program: tension array array): tension array * tension array * tension 
 
 
   (* Memory entries *)
-  let mem_set = nouvelle_tension() in
+  let mem_set = mem_set opcode in
   let mem_l1, mem_l2 = List.init 8 (fun _ -> nouvelle_tension()), List.init 8 (fun _ -> nouvelle_tension()) in
   let mem_e, mem_v = List.init 8 (fun _ -> nouvelle_tension()), Array.init 8 (fun _ -> nouvelle_tension()) in
   
   (* ALU entries *)
-  let alu_instruction = Array.init 3 (fun _ -> nouvelle_tension()) in
-  let alu_x, alu_y = Array.init 16 (fun _ -> nouvelle_tension()), Array.init 16 (fun _ -> nouvelle_tension()) in
+  let alu_instruction = alu_instruction opcode in
+  let alu_x, alu_y = alu_entries r2 r3 regs in
   
   (* Memory and ALU *)
   let mem1, mem2 = ram_rom mem_set mem_l1 mem_l2 mem_e mem_v program in
