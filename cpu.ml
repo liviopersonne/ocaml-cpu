@@ -18,7 +18,7 @@ let register_init (taille: int): tension * tension array * tension array =
   let register = word_registre set input in
   (set, input, register)
 
-let rec relie_liste (l1: tension list) (l2: tension list) = List.iter2 (fun x y -> relie x y) l1 l2
+let relie_liste (l1: tension list) (l2: tension list) = List.iter2 (fun x y -> relie x y) l1 l2
 let relie_array (l1: tension array) (l2: tension array): unit = Array.iter2 (fun x y -> relie x y) l1 l2
 
 
@@ -26,10 +26,6 @@ let relie_array (l1: tension array) (l2: tension array): unit = Array.iter2 (fun
 let memory_set opcode: tension = 
   let trois = [|un; un; zero; zero|] in
   est_nul (difference trois opcode)
-
-let alu_instruction opcode: tension array = match opcode with
-  | [|a;b;c;_|] -> [|a;b;c|]
-  | _ -> failwith "Unmatchable case"
 
 let adress_to_register (adress: tension list) (regs: tension array array): tension array = 
   let rec aux adress (cmpt: int list): tension array = match adress with
@@ -40,8 +36,10 @@ let adress_to_register (adress: tension list) (regs: tension array array): tensi
 let alu_entries (r2: tension list) (r3: tension list) (regs: tension array array): tension array * tension array = 
   (adress_to_register r2 regs, adress_to_register r3 regs)
 
-let memory_read_adresses (r2: tension list) (r3: tension list): tension list * tension list = 
-  (r2, r3)
+let memory_read_adresses (r2: tension list) (regs: tension array array): tension list * tension list = 
+  let r2_value = adress_to_register r2 regs in (* Array of size 16 *)
+  let zero_word = List.init nb_bits (fun _ -> zero) in
+  (Array.to_list(Array.sub r2_value 0 8), zero_word)
 
 let memory_write_adress (r1: tension array) (r2: tension list) (regs: tension array array): tension list = 
   Array.to_list (somme (adress_to_register r2 regs) r1)
@@ -65,7 +63,8 @@ let register_set (i: int) (opcode: tension array) (r1: tension array): tension =
     zero
   )
 
-let register_value (i: int) (pc: tension array) (opcode: tension array) (r1: tension array) (r2: tension array) (r3: tension array): tension array =
+let register_value (mem1: tension array) (pc: tension array) (opcode: tension array) (r1: tension array) 
+(r2: tension array) (r3: tension array) (alu_x: tension array) (alu_y: tension array): tension array =
   let zero_word = [|zero; zero; zero; zero; zero; zero; zero; zero|] in
   match opcode with
   | [|a;b;c;d|] -> begin
@@ -80,7 +79,7 @@ let register_value (i: int) (pc: tension array) (opcode: tension array) (r1: ten
             somme pc (Array.append r1 r2)
           ) (
             (* Opcode = 5 *)
-            [||]
+            mem1
           )
         ) (
           (* Opcode = 6 ou 7 *)
@@ -89,7 +88,7 @@ let register_value (i: int) (pc: tension array) (opcode: tension array) (r1: ten
       )
     ) (
       (* Opcode >= 8: instruction ALU *)
-      [||]
+      alu [|a;b;c|] alu_x alu_y
     )
   end
   | _ -> failwith "Unmatchable case"
@@ -182,32 +181,37 @@ let cpu (program: tension array array): tension array * tension array * tension 
   
   (* Registers *)
   let pc_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
+  let alu_x_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
+  let alu_y_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
+  let mem1_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
   let regs_set = Array.init 16 (fun i -> register_set i opcode r1_array) in
-  let regs_value = Array.init 16 (fun i -> register_value i pc_init opcode r1_array r2_array r3_array) in
+  let regs_value = Array.init 16 (fun _ -> register_value mem1_init pc_init opcode r1_array r2_array r3_array alu_x_init alu_y_init) in
   let regs = Array.init 16 (fun i -> word_registre regs_set.(i) regs_value.(i)) in
   let pc_set = pc_set opcode r1_array r2_list regs in
   let pc_value = pc_value pc_init opcode r1_array r2_array r3_array regs in
   let pc = word_registre pc_set pc_value in
   relie_array pc pc_init;
 
+  (* ALU entries *)
+  let alu_x, alu_y = alu_entries r2_list r3_list regs in
+  relie_array alu_x alu_x_init;
+  relie_array alu_y alu_y_init;
+
 
   (* Memory entries *)
   let mem_set = memory_set opcode in
-  let mem_l1, mem_l2 = memory_read_adresses r2_list r3_list in
+  let mem_l1, mem_l2 = memory_read_adresses r2_list regs in
   let mem_e = memory_write_adress r1_array r2_list regs in
   let mem_v = memory_write_value r3_list regs in
   
-  (* ALU entries *)
-  let alu_instruction = alu_instruction opcode in
-  let alu_x, alu_y = alu_entries r2_list r3_list regs in
-  
   (* Memory and ALU *)
   let mem1, mem2 = ram_rom mem_set mem_l1 mem_l2 mem_e mem_v program in
-  let alu_out = alu alu_instruction alu_x alu_y in
+  relie_array mem1 mem1_init;
 
 
 
 
+  let _ = r1_list, mem2 in
 
   let entree = [|0;0;0;0;0;0;0;0|] in
   let rep = compile pc_value pc entree in
