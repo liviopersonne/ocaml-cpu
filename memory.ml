@@ -33,7 +33,7 @@ let rec memoire (taille_addr: int) (set: tension) (l1: tension list) (l2: tensio
       let vd1, vd2 = memoire (taille_addr-1) (mux set set he) q1 q2 qe v in
       (selecteur h1 vg1 vd1, selecteur h2 vg2 vd2)
   end
-  | _ -> failwith "Invalid adresses"
+  | _ -> failwith "Invalid adresses in memory"
 
 
 let rom (l1: tension list) (l2: tension list) 
@@ -51,7 +51,7 @@ let rom (l1: tension list) (l2: tension list)
       let vd1, vd2 = construit_rom (taille_addr-1) q1 q2 (1::addr) in
       (selecteur h1 vg1 vd1, selecteur h2 vg2 vd2)
     end
-    | _ -> failwith "Invalid adresses"
+    | _ -> failwith "Invalid adresses in rom"
   in construit_rom taille_addr_rom l1 l2 []
   
 
@@ -78,6 +78,9 @@ let rom (l1: tension list) (l2: tension list)
     | _ -> failwith "Invalid adresses"
   in construit_ram_rom 8 set l1 l2 [] e v *)
 
+(* 
+  Ram_rom sur des adresses de 8 bits, pour des mots sur 16 bits
+*)
 let ram_rom (set: tension) (l1: tension list) (l2: tension list)
 (e: tension list) (v: tension array) (contenu_rom: tension array array): tension array * tension array =
   match (l1, l2) with

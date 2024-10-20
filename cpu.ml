@@ -12,6 +12,7 @@ let print_array (a) =
 
 (* Mot de taille n constitué que de zeros *)
 let zero_array (n: int): tension array = Array.init n (fun _ -> zero)
+let zero_list (n: int): tension list = List.init n (fun _ -> zero)
 
 let relie_liste (l1: tension list) (l2: tension list) = List.iter2 (fun x y -> relie x y) l1 l2
 let relie_array (l1: tension array) (l2: tension array): unit = Array.iter2 (fun x y -> relie x y) l1 l2
@@ -33,11 +34,10 @@ let alu_entries (r2: tension list) (r3: tension list) (regs: tension array array
 
 let memory_read_adresses (r2: tension list) (regs: tension array array): tension list * tension list = 
   let r2_value = adress_to_register r2 regs in (* Array of size 16 *)
-  let zero_word = List.init nb_bits (fun _ -> zero) in
-  (Array.to_list(Array.sub r2_value 0 8), zero_word)
+  (Array.to_list(Array.sub r2_value 0 8), zero_list 8)
 
 let memory_write_adress (r1: tension array) (r2: tension list) (regs: tension array array): tension list = 
-  Array.to_list (somme (adress_to_register r2 regs) r1)
+  Array.to_list (somme (adress_to_register r2 regs) (Array.concat [r1; zero_array 12]))
 
 let memory_write_value (r3: tension list) (regs: tension array array): tension array =
   (* On suppose que opcode = 3 *)
@@ -179,7 +179,9 @@ let pc_value (pc: tension array) (opcode: tension array) (r1: tension array) (r2
     r3: Registre n°3 (lu)
 *)
 let cpu (program: tension array array): int array * int array * int array * int array =
-  assert(Array.length program <= 256);  (* Check that the program fits in the rom *)
+  let program_length = Array.length program in
+  assert(program_length <= 128);  (* Check that the program fits in the rom *)
+  let program_256 = Array.init 128 (fun i -> if i < program_length then program.(i) else zero_array 16) in
 
   (* Inputs *)
   let input = Array.init 16 (fun _ -> nouvelle_tension()) in
@@ -205,8 +207,6 @@ let cpu (program: tension array array): int array * int array * int array * int 
   let pc = word_registre pc_set pc_value in
   relie_array pc pc_init;
 
-  
-  print_endline "I'm out !";
 
   (* ALU entries *)
   let alu_x, alu_y = alu_entries r2_list r3_list regs in
@@ -219,9 +219,10 @@ let cpu (program: tension array array): int array * int array * int array * int 
   let mem_l1, mem_l2 = memory_read_adresses r2_list regs in
   let mem_e = memory_write_adress r1_array r2_list regs in
   let mem_v = memory_write_value r3_list regs in
+
   
   (* Memory and ALU *)
-  let mem1, mem2 = ram_rom mem_set mem_l1 mem_l2 mem_e mem_v program in
+  let mem1, mem2 = ram_rom mem_set mem_l1 mem_l2 mem_e mem_v program_256 in
   relie_array mem1 mem1_init;
 
   (* Unused variables *)
