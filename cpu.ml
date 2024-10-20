@@ -117,7 +117,7 @@ let pc_set (opcode: tension array) (r1: tension array) (r2: tension list) (regs:
       mux b (
         mux a (
           (* opcode = 0 *)
-          mux r1.(1) (
+          mux r1.(2) (
             (* r1[1] = 0 *)
             ou (est_negatif r2_value) (est_nul r2_value)
           ) (
@@ -126,7 +126,7 @@ let pc_set (opcode: tension array) (r1: tension array) (r2: tension list) (regs:
           )
         ) (
           (* opcode = 1 *)
-          mux r1.(1) (
+          mux r1.(2) (
             (* r1[1] = 0 *)
             est_nul r2_value
           ) (
@@ -149,7 +149,7 @@ let pc_value (pc: tension array) (opcode: tension array) (r1: tension array) (r2
     (* On suppose que opcode < 3 *)
     selecteur b (
       (* opcode = 0 ou 1 *)
-      selecteur r1.(0) (
+      selecteur r1.(3) (
         (* r1[0] = 0 *)
         (* TODO: Ca peut être sub r1 2 2 selon le sens de r1 *)
         (* TODO: Vérifier ordre *)
@@ -250,7 +250,7 @@ let cpu (program: tension array array): int array * int array * int array * int 
     else  (* Jump instruction *)
       pc_input := !pc_output
   done;
-  
+
   let opcode = Array.sub !rep 16 4 in
   let r2 = Array.sub !rep 20 4 in
   let r3 = Array.sub !rep 24 4 in
