@@ -204,6 +204,8 @@ let cpu (program: tension array array): int array * int array * int array * int 
   let r2_list = Array.to_list (r2_array) in
   let r3_list = Array.to_list (r3_array) in
 
+
+
   (* Registers *)
   let alu_x_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
   let alu_y_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
@@ -244,20 +246,24 @@ let cpu (program: tension array array): int array * int array * int array * int 
   let pc_input = ref (Array.make 16 0) in
   let pc_output = ref (Array.make 16 0) in
   let rep = ref (Array.make 28 0) in
+  let opcode_output = ref (Array.make 4 0) in
+  let r2_output = ref (Array.make 16 0) in
+  let r3_output = ref (Array.make 16 0) in
 
   while (bit_liste_vers_nb (Array.to_list !pc_input) < 256) do
-    Printf.printf "pc: %d\n" (bit_liste_vers_nb (Array.to_list !pc_input));
+    let atn (a: int array): int = bit_liste_vers_nb (Array.to_list a) in
+    Printf.printf "pc: %d\n" (atn !pc_input);
     rep := compile pc_init (Array.concat [pc_out; opcode; adress_to_register r2_list regs; adress_to_register r3_list regs]) !pc_input;
-    print_array !rep;
     pc_output := Array.sub !rep 0 16;
+    opcode_output := Array.sub !rep 16 4;
+    r2_output := Array.sub !rep 20 16;
+    r3_output := Array.sub !rep 36 16;
+    Printf.printf "pc: %d, opcode: %d, r2: %d, r3: %d\n" (atn !pc_output) (atn !opcode_output) (atn !r2_output) (atn !r3_output);
     if (Array.for_all2 (=) !pc_input !pc_output) then  (* Not a jump instruction *)
       pc_input := (incr_array !pc_output)
     else  (* Jump instruction *)
       pc_input := !pc_output
   done;
 
-  let opcode = Array.sub !rep 16 4 in
-  let r2 = Array.sub !rep 20 16 in
-  let r3 = Array.sub !rep 36 16 in
-  (!pc_output, opcode, r2, r3)
+  (!pc_output, !opcode_output, !r2_output, !r3_output)
       
