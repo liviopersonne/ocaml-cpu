@@ -85,7 +85,7 @@ let ram_rom (set: tension) (l1: tension list) (l2: tension list)
 (e: tension list) (v: tension array) (contenu_rom: tension array array): tension array * tension array =
   match (l1, l2) with
   | h1::q1, h2::q2 -> begin
-    let ramg, ramd = memoire 7 set q1 q2 e v in
+    let ramg, ramd = memoire 8 set q1 q2 e v in
     let romg, romd = rom q1 q2 contenu_rom in
     (selecteur h1 romg ramg, selecteur h2 romd ramd)
   end

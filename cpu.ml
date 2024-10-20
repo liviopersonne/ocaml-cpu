@@ -34,7 +34,7 @@ let alu_entries (r2: tension list) (r3: tension list) (regs: tension array array
 
 let memory_read_adresses (r2: tension list) (regs: tension array array): tension list * tension list = 
   let r2_value = adress_to_register r2 regs in (* Array of size 16 *)
-  (Array.to_list(Array.sub r2_value 0 8), zero_list 8)
+  (Array.to_list(Array.sub r2_value 0 9), zero_list 9)
 
 let memory_write_adress (r1: tension array) (r2: tension list) (regs: tension array array): tension list = 
   Array.to_list (somme (adress_to_register r2 regs) (Array.concat [r1; zero_array 12]))
@@ -180,8 +180,8 @@ let pc_value (pc: tension array) (opcode: tension array) (r1: tension array) (r2
 *)
 let cpu (program: tension array array): int array * int array * int array * int array =
   let program_length = Array.length program in
-  assert(program_length <= 128);  (* Check that the program fits in the rom *)
-  let program_256 = Array.init 128 (fun i -> if i < program_length then program.(i) else zero_array 16) in
+  assert(program_length <= 256);  (* Check that the program fits in the rom *)
+  let program_256 = Array.init 256 (fun i -> if i < program_length then program.(i) else zero_array 16) in
 
   (* Inputs *)
   let input = Array.init 16 (fun _ -> nouvelle_tension()) in
@@ -195,7 +195,6 @@ let cpu (program: tension array array): int array * int array * int array * int 
   
 
   (* Registers *)
-  let pc_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
   let alu_x_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
   let alu_y_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
   let mem1_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
@@ -233,6 +232,8 @@ let cpu (program: tension array array): int array * int array * int array * int 
   (* TODO: Excute code *)
 
   let entree = [|0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0|] in
+
+  (* Compile entrées sorties *)
   let rep = compile input (Array.concat [pc; opcode; adress_to_register r2_list regs; adress_to_register r3_list regs]) entree in
   let pc = Array.sub rep 0 16 in
   let opcode = Array.sub rep 16 4 in
