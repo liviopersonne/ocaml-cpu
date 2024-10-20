@@ -251,6 +251,7 @@ let cpu (program: tension array array): int array * int array * int array * int 
   let r3_output = ref (Array.make 16 0) in
 
   while (bit_liste_vers_nb (Array.to_list !pc_input) < 256) do
+    (* Bit array to number *)
     let atn (a: int array): int = bit_liste_vers_nb (Array.to_list a) in
     Printf.printf "pc: %d\n" (atn !pc_input);
     rep := compile pc_init (Array.concat [pc_out; opcode; adress_to_register r2_list regs; adress_to_register r3_list regs]) !pc_input;

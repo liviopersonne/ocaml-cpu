@@ -14,8 +14,10 @@ let cpu_instructions_to_program (instructions: int array): tension array array =
 
 
 let main() =
-  let instructions = [|
-    ins_add 1 1 1;
+  let instructions = 
+  [|
+    (* ins_add 1 1 0; *)
+    ins_cst_low 9 0;
   |] in
 
   let pc, opcode, r2, r3 = cpu (cpu_instructions_to_program instructions) in
