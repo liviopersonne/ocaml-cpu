@@ -30,6 +30,10 @@
   (modules cpu)
   (libraries circuit logique arithmetique alu memory)
 )
+(library
+  (name run_cpu)
+  (modules run_cpu)
+)
 ; (test
 ;   (name test_logique)
 ;   (modules test_logique)
@@ -53,13 +57,13 @@
 (test
   (name test_cpu)
   (modules test_cpu)
-  (libraries circuit logique arithmetique alu memory cpu)
+  (libraries circuit logique arithmetique alu memory cpu run_cpu)
 )
-(executable
-  (name run_cpu)
-  (modules run_cpu)
-  (libraries circuit logique arithmetique alu memory cpu)
-)
+; (executable
+;   (name run_cpu)
+;   (modules run_cpu)
+;   (libraries circuit logique arithmetique alu memory cpu)
+; )
 
 (library
   (name libdraw)
