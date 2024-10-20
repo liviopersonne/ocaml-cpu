@@ -208,15 +208,10 @@ let cpu (program: tension array array): int array * int array * int array * int 
   let pc_set = pc_set opcode r1_array r2_list regs in
   let pc_value = pc_value pc_init opcode r1_array r2_array r3_array regs in
   let pc = word_registre pc_set pc_value in
-  relie_array pc pc_init;
-  Array.iter2 (fun x y -> relie_array x y) regs regs_init;
 
 
   (* ALU entries *)
   let alu_x, alu_y = alu_entries r2_list r3_list regs in
-  relie_array alu_x alu_x_init;
-  relie_array alu_y alu_y_init;
-
 
   (* Memory entries *)
   let mem_set = memory_set opcode in
@@ -227,15 +222,17 @@ let cpu (program: tension array array): int array * int array * int array * int 
   (* Memory and ALU *)
   (* On fait une lecture en mémoire à gauche et une lecture d'instruction à droite *)
   let mem, input = ram_rom mem_set mem_l1 mem_l2 mem_e mem_v program_256 in
+
+  (* On relie les fils *)
+  (* relie_array pc pc_init; *)
+  Array.iter2 (fun x y -> relie_array x y) regs regs_init;
+  relie_array alu_x alu_x_init;
+  relie_array alu_y alu_y_init;
   relie_array mem mem_init;
   relie_array input input_init;
 
   (* Unused variables *)
-  let _ = r1_list in
-
-
-  (* TODO: Initialize pc to 0 *)
-  (* TODO: Excute code *)
+  let _ = r1_list, pc, pc_init, regs, regs_init, alu_x, alu_y, alu_x_init, alu_y_init, mem, mem_init, input, input_init in
   
   (* let entree = [|0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0|] in
   (* Compile entrées sorties *)
@@ -252,7 +249,7 @@ let cpu (program: tension array array): int array * int array * int array * int 
 
   while (bit_liste_vers_nb (Array.to_list !pc_input) < 256) do
     Printf.printf "pc: %d\n" (bit_liste_vers_nb (Array.to_list !pc_input));
-    pc_output := compile pc pc !pc_input;
+    pc_output := compile pc_init pc !pc_input;
     if (Array.for_all2 (=) !pc_input !pc_output) then  (* Not a jump instruction *)
       pc_input := (incr_array !pc_output)
     else  (* Jump instruction *)
