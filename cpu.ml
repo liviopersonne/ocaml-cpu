@@ -242,8 +242,8 @@ let cpu (program: tension array array): int array * int array * int array * int 
 
   while (bit_liste_vers_nb (Array.to_list !pc_input) < 256) do
     Printf.printf "pc: %d\n" (bit_liste_vers_nb (Array.to_list !pc_input));
-    (* pc_output := compile pc_init pc !pc_input; *)
     rep := compile pc_init (Array.concat [pc; opcode; adress_to_register r2_list regs; adress_to_register r3_list regs]) !pc_input;
+    Printf.printf("rep size: %d\n") (Array.length !rep);
     pc_output := Array.sub !rep 0 16;
     if (Array.for_all2 (=) !pc_input !pc_output) then  (* Not a jump instruction *)
       pc_input := (incr_array !pc_output)
@@ -252,7 +252,7 @@ let cpu (program: tension array array): int array * int array * int array * int 
   done;
 
   let opcode = Array.sub !rep 16 4 in
-  let r2 = Array.sub !rep 20 4 in
-  let r3 = Array.sub !rep 24 4 in
+  let r2 = Array.sub !rep 20 16 in
+  let r3 = Array.sub !rep 36 16 in
   (!pc_output, opcode, r2, r3)
       
