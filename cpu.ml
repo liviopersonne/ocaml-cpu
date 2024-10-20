@@ -10,6 +10,9 @@ let print_array (a) =
   Array.iter (Printf.printf "%d, ") a;
   print_string "\b\b|]\n"
 
+(* Mot de taille n constitué que de zeros *)
+let zero_array (n: int): tension array = Array.init n (fun _ -> zero)
+
 let relie_liste (l1: tension list) (l2: tension list) = List.iter2 (fun x y -> relie x y) l1 l2
 let relie_array (l1: tension array) (l2: tension array): unit = Array.iter2 (fun x y -> relie x y) l1 l2
 
@@ -63,8 +66,8 @@ let register_set (i: int) (opcode: tension array) (r1: tension array): tension =
 let register_value (mem1: tension array) (pc: tension array) (opcode: tension array) (r1: tension array) 
 (r2: tension array) (r3: tension array) (alu_x: tension array) (alu_y: tension array): tension array =
   let _ = r1 in (* TODO: remove *)
-  let zero_word = [|zero; zero; zero; zero; zero; zero; zero; zero; zero; zero; zero; zero; zero; zero; zero; zero|] in
-  let zero_half = [|zero; zero; zero; zero; zero; zero; zero; zero|] in
+  let zero_word = zero_array 16 in
+  let zero_half = zero_array 8 in
   match opcode with
   | [|a;b;c;d|] -> begin
     selecteur d (
@@ -143,17 +146,20 @@ let pc_value (pc: tension array) (opcode: tension array) (r1: tension array) (r2
   | [|_;b;_;_|] -> begin
     (* On suppose que opcode < 3 *)
     selecteur b (
-        (* opcode = 2 *)
-        somme pc (Array.concat [Array.sub r1 3 2;r3])
-    ) (
       (* opcode = 0 ou 1 *)
       selecteur r1.(0) (
         (* r1[0] = 0 *)
-        somme pc (Array.concat [Array.sub r1 3 2;r2;r3])
+        (* TODO: Ca peut être sub r1 2 2 selon le sens de r1 *)
+        (* TODO: Vérifier ordre *)
+        somme pc (Array.concat [r3; Array.sub r1 0 2; zero_array 10])
       ) (
         (* r1[0] = 1 *)
         adress_to_register (Array.to_list r3) regs
       )
+    ) (
+      (* opcode = 2 *)
+      (* TODO: Ca peut être sub r1 2 2 selon le sens de r1 *)
+      somme pc (Array.concat [r3; r2; Array.sub r1 0 2; zero_array 6])
     )
   end
   | _ -> failwith "Unmatchable case in pc_value"
@@ -195,11 +201,12 @@ let cpu (program: tension array array): int array * int array * int array * int 
   let regs_value = Array.init 16 (fun _ -> register_value mem1_init pc_init opcode r1_array r2_array r3_array alu_x_init alu_y_init) in
   let regs = Array.init 16 (fun i -> word_registre regs_set.(i) regs_value.(i)) in
   let pc_set = pc_set opcode r1_array r2_list regs in
-  let pc_value = pc_value pc_init opcode r1_array r2_array r3_array regs in print_endline "HEYYYY";
-  let pc = word_registre pc_set pc_value in print_endline "HEYYYY";
-  relie_array pc pc_init;  print_endline "HEYYYY";
+  let pc_value = pc_value pc_init opcode r1_array r2_array r3_array regs in
+  let pc = word_registre pc_set pc_value in
+  relie_array pc pc_init;
 
   
+  print_endline "I'm out !";
 
   (* ALU entries *)
   let alu_x, alu_y = alu_entries r2_list r3_list regs in
