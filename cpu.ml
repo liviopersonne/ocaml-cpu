@@ -10,6 +10,8 @@ let print_array (a) =
   Array.iter (Printf.printf "%d, ") a;
   print_string "\b\b|]\n"
 
+let incr_array (a: int array): int array = nb_to_array ((bit_liste_vers_nb (Array.to_list a)) + 1)
+
 (* Mot de taille n constitué que de zeros *)
 let zero_array (n: int): tension array = Array.init n (fun _ -> zero)
 let zero_list (n: int): tension list = List.init n (fun _ -> zero)
@@ -32,9 +34,9 @@ let adress_to_register (adress: tension list) (regs: tension array array): tensi
 let alu_entries (r2: tension list) (r3: tension list) (regs: tension array array): tension array * tension array = 
   (adress_to_register r2 regs, adress_to_register r3 regs)
 
-let memory_read_adresses (r2: tension list) (regs: tension array array): tension list * tension list = 
+let memory_read_adresses (r2: tension list) (pc: tension array) (regs: tension array array): tension list * tension list = 
   let r2_value = adress_to_register r2 regs in (* Array of size 16 *)
-  (Array.to_list(Array.sub r2_value 0 9), zero_list 9)
+  (Array.to_list(Array.sub r2_value 0 9), Array.to_list(Array.sub pc 0 9))
 
 let memory_write_adress (r1: tension array) (r2: tension list) (regs: tension array array): tension list = 
   Array.to_list (somme (adress_to_register r2 regs) (Array.concat [r1; zero_array 12]))
@@ -182,30 +184,32 @@ let cpu (program: tension array array): int array * int array * int array * int 
   let program_length = Array.length program in
   assert(program_length <= 256);  (* Check that the program fits in the rom *)
   let program_256 = Array.init 256 (fun i -> if i < program_length then program.(i) else zero_array 16) in
+  
 
   (* Inputs *)
-  let input = Array.init 16 (fun _ -> nouvelle_tension()) in
-  let opcode = Array.sub input 0 4 in
-  let r1_array = Array.sub input 4 4 in
-  let r2_array = Array.sub input 8 4 in
-  let r3_array = Array.sub input 12 4 in
+  let pc_init = Array.init 16 (fun _ -> nouvelle_tension()) in
+  let regs_init = Array.init 16 (fun _ -> Array.init 16 (fun _ -> nouvelle_tension())) in
+  let input_init = Array.init 16 (fun _ -> nouvelle_tension()) in
+  let opcode = Array.sub input_init 0 4 in
+  let r1_array = Array.sub input_init 4 4 in
+  let r2_array = Array.sub input_init 8 4 in
+  let r3_array = Array.sub input_init 12 4 in
   let r1_list = Array.to_list (r1_array) in
   let r2_list = Array.to_list (r2_array) in
   let r3_list = Array.to_list (r3_array) in
-  
 
   (* Registers *)
-  let pc_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
   let alu_x_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
   let alu_y_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
-  let mem1_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
+  let mem_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
   let regs_set = Array.init 16 (fun i -> register_set i opcode r1_array) in
-  let regs_value = Array.init 16 (fun _ -> register_value mem1_init pc_init opcode r1_array r2_array r3_array alu_x_init alu_y_init) in
+  let regs_value = Array.init 16 (fun _ -> register_value mem_init pc_init opcode r1_array r2_array r3_array alu_x_init alu_y_init) in
   let regs = Array.init 16 (fun i -> word_registre regs_set.(i) regs_value.(i)) in
   let pc_set = pc_set opcode r1_array r2_list regs in
   let pc_value = pc_value pc_init opcode r1_array r2_array r3_array regs in
   let pc = word_registre pc_set pc_value in
   relie_array pc pc_init;
+  Array.iter2 (fun x y -> relie_array x y) regs regs_init;
 
 
   (* ALU entries *)
@@ -216,30 +220,43 @@ let cpu (program: tension array array): int array * int array * int array * int 
 
   (* Memory entries *)
   let mem_set = memory_set opcode in
-  let mem_l1, mem_l2 = memory_read_adresses r2_list regs in
+  let mem_l1, mem_l2 = memory_read_adresses r2_list pc regs in
   let mem_e = memory_write_adress r1_array r2_list regs in
   let mem_v = memory_write_value r3_list regs in
-
   
   (* Memory and ALU *)
-  let mem1, mem2 = ram_rom mem_set mem_l1 mem_l2 mem_e mem_v program_256 in
-  relie_array mem1 mem1_init;
+  (* On fait une lecture en mémoire à gauche et une lecture d'instruction à droite *)
+  let mem, input = ram_rom mem_set mem_l1 mem_l2 mem_e mem_v program_256 in
+  relie_array mem mem_init;
+  relie_array input input_init;
 
   (* Unused variables *)
-  let _ = r1_list, mem2 in
+  let _ = r1_list in
 
 
   (* TODO: Initialize pc to 0 *)
   (* TODO: Excute code *)
-
-  let entree = [|0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0|] in
-
+  
+  (* let entree = [|0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0|] in
   (* Compile entrées sorties *)
   let rep = compile input (Array.concat [pc; opcode; adress_to_register r2_list regs; adress_to_register r3_list regs]) entree in
   let pc = Array.sub rep 0 16 in
   let opcode = Array.sub rep 16 4 in
   let r2 = Array.sub rep 20 4 in
   let r3 = Array.sub rep 24 4 in
-  (pc, opcode, r2, r3)
+  (pc, opcode, r2, r3) *)
 
+  let pc_input = ref (Array.make 16 0) in
+  let pc_output = ref (Array.make 16 0) in
+  Printf.printf "pc: %d\n" (bit_liste_vers_nb (Array.to_list !pc_input));
+
+  while (bit_liste_vers_nb (Array.to_list !pc_input) < 256) do
+    Printf.printf "pc: %d\n" (bit_liste_vers_nb (Array.to_list !pc_input));
+    pc_output := compile pc pc !pc_input;
+    if (Array.for_all2 (=) !pc_input !pc_output) then  (* Not a jump instruction *)
+      pc_input := (incr_array !pc_output)
+    else  (* Jump instruction *)
+      pc_input := !pc_output
+  done;
+  failwith "TODO"
       
