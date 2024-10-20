@@ -54,10 +54,17 @@ let register_set (i: int) (opcode: tension array) (r1: tension array): tension =
     (* opcode < 4 *)
     zero
   )
-
+  
+(* Tailles:
+    - r1, r2, r3, opcode: 4
+    - pc, mem1, alu_x, alu_y: 16
+    - sortie: 16
+*)
 let register_value (mem1: tension array) (pc: tension array) (opcode: tension array) (r1: tension array) 
 (r2: tension array) (r3: tension array) (alu_x: tension array) (alu_y: tension array): tension array =
-  let zero_word = [|zero; zero; zero; zero; zero; zero; zero; zero|] in
+  let _ = r1 in (* TODO: remove *)
+  let zero_word = [|zero; zero; zero; zero; zero; zero; zero; zero; zero; zero; zero; zero; zero; zero; zero; zero|] in
+  let zero_half = [|zero; zero; zero; zero; zero; zero; zero; zero|] in
   match opcode with
   | [|a;b;c;d|] -> begin
     selecteur d (
@@ -68,14 +75,21 @@ let register_value (mem1: tension array) (pc: tension array) (opcode: tension ar
         selecteur b (
           selecteur a (
             (* Opcode = 4 *)
-            somme pc (Array.append r1 r2)
+            somme pc (Array.concat [r3; r2; zero_half])
           ) (
             (* Opcode = 5 *)
             mem1
           )
         ) (
-          (* Opcode = 6 ou 7 *)
-          Array.append r2 r3
+          selecteur a (
+            (* Opcode = 6 *)
+            (* TODO: Corriger ici pour ne pas modifier les autres bits (de zero_half) *)
+            Array.concat [r3; r2; zero_half]
+          ) (
+            (* Opcode = 7 *)
+            (* TODO: Corriger ici pour ne pas modifier les autres bits (de zero_half) *)
+            Array.concat [zero_half; r3; r2]
+          )
         )
       )
     ) (
@@ -160,7 +174,7 @@ let pc_value (pc: tension array) (opcode: tension array) (r1: tension array) (r2
 *)
 let cpu (program: tension array array): int array * int array * int array * int array =
   assert(Array.length program <= 256);  (* Check that the program fits in the rom *)
-  
+
   (* Inputs *)
   let input = Array.init 16 (fun _ -> nouvelle_tension()) in
   let opcode = Array.sub input 0 4 in
@@ -171,6 +185,7 @@ let cpu (program: tension array array): int array * int array * int array * int 
   let r2_list = Array.to_list (r2_array) in
   let r3_list = Array.to_list (r3_array) in
   
+
   (* Registers *)
   let pc_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
   let alu_x_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
@@ -180,9 +195,11 @@ let cpu (program: tension array array): int array * int array * int array * int 
   let regs_value = Array.init 16 (fun _ -> register_value mem1_init pc_init opcode r1_array r2_array r3_array alu_x_init alu_y_init) in
   let regs = Array.init 16 (fun i -> word_registre regs_set.(i) regs_value.(i)) in
   let pc_set = pc_set opcode r1_array r2_list regs in
-  let pc_value = pc_value pc_init opcode r1_array r2_array r3_array regs in
-  let pc = word_registre pc_set pc_value in
-  relie_array pc pc_init;
+  let pc_value = pc_value pc_init opcode r1_array r2_array r3_array regs in print_endline "HEYYYY";
+  let pc = word_registre pc_set pc_value in print_endline "HEYYYY";
+  relie_array pc pc_init;  print_endline "HEYYYY";
+
+  
 
   (* ALU entries *)
   let alu_x, alu_y = alu_entries r2_list r3_list regs in

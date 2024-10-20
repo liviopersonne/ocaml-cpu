@@ -38,7 +38,7 @@ let difference a b =
 let est_nul a = Array.fold_left (fun curr x -> et curr (neg x)) (neg a.(0)) a
 
 (* Teste si a < 0 *)
-let est_negatif a = a.(nb_bits-1)
+let est_negatif a = a.((Array.length a)-1)
 
 (* Teste si a >= 0 *)
 let est_positif a: tension = neg (est_negatif a)
