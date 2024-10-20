@@ -195,6 +195,7 @@ let cpu (program: tension array array): int array * int array * int array * int 
   
 
   (* Registers *)
+  let pc_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
   let alu_x_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
   let alu_y_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
   let mem1_init = Array.init nb_bits (fun _ -> nouvelle_tension()) in
