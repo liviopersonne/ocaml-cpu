@@ -105,7 +105,7 @@ let register_value (mem1: tension array) (pc: tension array) (opcode: tension ar
   | _ -> failwith "Unmatchable case in register_value"
 
 (* Le registre pc est modifié ssi opcode <= 2 *)
-let pc_set (opcode: tension array) (r1: tension array) (r2: tension list) (regs: tension array array): tension = 
+let pc_jump (opcode: tension array) (r1: tension array) (r2: tension list) (regs: tension array array): tension = 
   let deux = [|zero; un; zero; zero|] in
   let r2_value = adress_to_register r2 regs in
   match opcode with
@@ -143,26 +143,32 @@ let pc_set (opcode: tension array) (r1: tension array) (r2: tension list) (regs:
   | _ -> failwith "Unmatchable case in pc_set"
   (* TODO ajouter l'incrémentation de pc *)
 
-let pc_value (pc: tension array) (opcode: tension array) (r1: tension array) (r2: tension array) (r3: tension array) (regs: tension array array): tension array =
+let pc_value (pc: tension array) (jump: tension) (opcode: tension array) (r1: tension array) (r2: tension array) (r3: tension array) (regs: tension array array): tension array =
   match opcode with
   | [|_;b;_;_|] -> begin
-    (* On suppose que opcode < 3 *)
-    selecteur b (
-      (* opcode = 0 ou 1 *)
-      selecteur r1.(3) (
-        (* r1[0] = 0 *)
-        (* TODO: Ca peut être sub r1 2 2 selon le sens de r1 *)
-        (* TODO: Vérifier ordre *)
-        somme pc (Array.concat [r3; Array.sub r1 0 2; zero_array 10])
-      ) (
-        (* r1[0] = 1 *)
-        adress_to_register (Array.to_list r3) regs
-      )
+    selecteur (jump) (
+      (* Il n'y a pas de saut *)
+      increment pc
     ) (
-      (* opcode = 2 *)
-      (* TODO: Ca peut être sub r1 2 2 selon le sens de r1 *)
-      somme pc (Array.concat [r3; r2; Array.sub r1 0 2; zero_array 6])
+      (* Il y a un saut (opcode < 3) *)
+      selecteur b (
+        (* opcode = 0 ou 1 *)
+        selecteur r1.(3) (
+          (* r1[0] = 0 *)
+          (* TODO: Ca peut être sub r1 2 2 selon le sens de r1 *)
+          (* TODO: Vérifier ordre *)
+          somme pc (Array.concat [r3; Array.sub r1 0 2; zero_array 10])
+        ) (
+          (* r1[0] = 1 *)
+          adress_to_register (Array.to_list r3) regs
+        )
+      ) (
+        (* opcode = 2 *)
+        (* TODO: Ca peut être sub r1 2 2 selon le sens de r1 *)
+        somme pc (Array.concat [r3; r2; Array.sub r1 0 2; zero_array 6])
+      )
     )
+    
   end
   | _ -> failwith "Unmatchable case in pc_value"
 
@@ -205,9 +211,8 @@ let cpu (program: tension array array): int array * int array * int array * int 
   let regs_set = Array.init 16 (fun i -> register_set i opcode r1_array) in
   let regs_value = Array.init 16 (fun _ -> register_value mem_init pc_init opcode r1_array r2_array r3_array alu_x_init alu_y_init) in
   let regs = Array.init 16 (fun i -> word_registre regs_set.(i) regs_value.(i)) in
-  let pc_set = pc_set opcode r1_array r2_list regs in
-  let pc_value = pc_value pc_init opcode r1_array r2_array r3_array regs in
-  let pc = word_registre pc_set pc_value in
+  let pc_jump = pc_jump opcode r1_array r2_list regs in
+  let pc_out = pc_value pc_init pc_jump opcode r1_array r2_array r3_array regs in
 
 
   (* ALU entries *)
@@ -215,7 +220,7 @@ let cpu (program: tension array array): int array * int array * int array * int 
 
   (* Memory entries *)
   let mem_set = memory_set opcode in
-  let mem_l1, mem_l2 = memory_read_adresses r2_list pc regs in
+  let mem_l1, mem_l2 = memory_read_adresses r2_list pc_init regs in
   let mem_e = memory_write_adress r1_array r2_list regs in
   let mem_v = memory_write_value r3_list regs in
   
@@ -232,7 +237,7 @@ let cpu (program: tension array array): int array * int array * int array * int 
   relie_array input input_init;
 
   (* Unused variables *)
-  let _ = r1_list, pc, pc_init, regs, regs_init, alu_x, alu_y, alu_x_init, alu_y_init, mem, mem_init, input, input_init in
+  let _ = r1_list, regs, regs_init, alu_x, alu_y, alu_x_init, alu_y_init, mem, mem_init, input, input_init in
   
   
   (* Compile entrées sorties *)
@@ -242,8 +247,8 @@ let cpu (program: tension array array): int array * int array * int array * int 
 
   while (bit_liste_vers_nb (Array.to_list !pc_input) < 256) do
     Printf.printf "pc: %d\n" (bit_liste_vers_nb (Array.to_list !pc_input));
-    rep := compile pc_init (Array.concat [pc; opcode; adress_to_register r2_list regs; adress_to_register r3_list regs]) !pc_input;
-    Printf.printf("rep size: %d\n") (Array.length !rep);
+    rep := compile pc_init (Array.concat [pc_out; opcode; adress_to_register r2_list regs; adress_to_register r3_list regs]) !pc_input;
+    print_array !rep;
     pc_output := Array.sub !rep 0 16;
     if (Array.for_all2 (=) !pc_input !pc_output) then  (* Not a jump instruction *)
       pc_input := (incr_array !pc_output)
