@@ -234,26 +234,25 @@ let cpu (program: tension array array): int array * int array * int array * int 
   (* Unused variables *)
   let _ = r1_list, pc, pc_init, regs, regs_init, alu_x, alu_y, alu_x_init, alu_y_init, mem, mem_init, input, input_init in
   
-  (* let entree = [|0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0|] in
+  
   (* Compile entrées sorties *)
-  let rep = compile input (Array.concat [pc; opcode; adress_to_register r2_list regs; adress_to_register r3_list regs]) entree in
-  let pc = Array.sub rep 0 16 in
-  let opcode = Array.sub rep 16 4 in
-  let r2 = Array.sub rep 20 4 in
-  let r3 = Array.sub rep 24 4 in
-  (pc, opcode, r2, r3) *)
-
   let pc_input = ref (Array.make 16 0) in
   let pc_output = ref (Array.make 16 0) in
-  Printf.printf "pc: %d\n" (bit_liste_vers_nb (Array.to_list !pc_input));
+  let rep = ref (Array.make 28 0) in
 
   while (bit_liste_vers_nb (Array.to_list !pc_input) < 256) do
     Printf.printf "pc: %d\n" (bit_liste_vers_nb (Array.to_list !pc_input));
-    pc_output := compile pc_init pc !pc_input;
+    (* pc_output := compile pc_init pc !pc_input; *)
+    rep := compile pc_init (Array.concat [pc; opcode; adress_to_register r2_list regs; adress_to_register r3_list regs]) !pc_input;
+    pc_output := Array.sub !rep 0 16;
     if (Array.for_all2 (=) !pc_input !pc_output) then  (* Not a jump instruction *)
       pc_input := (incr_array !pc_output)
     else  (* Jump instruction *)
       pc_input := !pc_output
   done;
-  failwith "TODO"
+  
+  let opcode = Array.sub !rep 16 4 in
+  let r2 = Array.sub !rep 20 4 in
+  let r3 = Array.sub !rep 24 4 in
+  (!pc_output, opcode, r2, r3)
       
